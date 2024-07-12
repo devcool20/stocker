@@ -1,69 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import axios from 'axios';
+import React from 'react';
+import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { newsData } from './newsData';
+import Sentiment from 'sentiment';
 
-const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';  // Replace with your Alpaca API key
-const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ';  // Replace with your Alpaca API secret
+const sentiment = new Sentiment();
 
 const StockDetailScreen = ({ route }) => {
   const { stock } = route.params;
-  const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const news = newsData[stock.symbol] || [];
 
-  useEffect(() => {
-    const fetchStockDetails = async () => {
-      try {
-        const headers = {
-          'APCA-API-KEY-ID': API_KEY,
-          'APCA-API-SECRET-KEY': API_SECRET
-        };
-
-        const response = await axios.get(`https://data.alpaca.markets/v2/stocks/${stock.symbol}/quotes/latest`, {
-          headers: headers
-        });
-
-        const quote = response.data.quote;
-        if (!quote) {
-          throw new Error('Unexpected API response format');
-        }
-
-        setDetails(quote);
-      } catch (error) {
-        console.error('Error fetching stock details:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStockDetails();
-  }, [stock.symbol]);
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-      </View>
-    );
-  }
+  const analyzeSentiment = (text) => {
+    const result = sentiment.analyze(text);
+    return result.score;
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{stock.name} ({stock.symbol})</Text>
-      <Text style={styles.detail}>Ask Price: ${details.ap}</Text>
-      <Text style={styles.detail}>Bid Price: ${details.bp}</Text>
-      <Text style={styles.detail}>Last Trade Price: ${details.lp}</Text>
-      <Text style={styles.detail}>Volume: {stock.volume}</Text>
-    </View>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>{stock.name}</Text>
+      {news.length > 0 ? (
+        <View style={styles.newsContainer}>
+          {news.map((article, index) => {
+            const sentimentScore = analyzeSentiment(article.summary);
+            const recommendation = sentimentScore > 0 ? 'Buy' : 'Sell';
+            return (
+              <View key={index} style={styles.newsArticle}>
+                <Image
+                  source={{ uri: article.imageUrl }}
+                  style={styles.newsImage}
+                />
+                <Text style={styles.newsTitle}>Latest News</Text>
+                <Text style={styles.newsArticleTitle}>{article.title}</Text>
+                <Text style={styles.newsArticleDescription}>{article.summary}</Text>
+                <Text style={styles.newsArticleSource}>Source: {article.source}</Text>
+                <Text style={styles.newsArticleDate}>{new Date(article.datetime).toLocaleString()}</Text>
+                <Text style={styles.sentimentScore}>Sentiment Score: {sentimentScore}</Text>
+                <Text style={styles.recommendation}>Recommendation: {recommendation}</Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <Text>No news available for this stock.</Text>
+      )}
+    </ScrollView>
   );
 };
 
@@ -73,28 +52,68 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  imageContainer: {
     alignItems: 'center',
+    marginBottom: 20,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
+  image: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   detail: {
     fontSize: 18,
     marginBottom: 10,
+    textAlign: 'center',
+  },
+  newsContainer: {
+    marginTop: 20,
+  },
+  newsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  newsArticle: {
+    marginBottom: 15,
+  },
+  newsImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
+    marginBottom: 10,
+  },
+  newsArticleTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  newsArticleDescription: {
+    fontSize: 16,
+  },
+  newsArticleSource: {
+    fontSize: 14,
+    color: 'gray',
+  },
+  newsArticleDate: {
+    fontSize: 14,
+    color: 'gray',
+  },
+  sentimentScore: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  recommendation: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'green',
+    marginTop: 10,
   },
 });
 
