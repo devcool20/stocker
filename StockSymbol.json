@@ -1,0 +1,17 @@
+import json
+
+# List of 50 stock symbols
+stock_symbols = [
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'FB', 'TSLA', 'NFLX', 'NVDA', 'BABA', 'INTC',
+    'ORCL', 'IBM', 'ADBE', 'PYPL', 'CSCO', 'PEP', 'KO', 'T', 'VZ', 'JNJ',
+    'PFE', 'MRK', 'ABT', 'LLY', 'NKE', 'MCD', 'DIS', 'SBUX', 'HD', 'LOW',
+    'WMT', 'COST', 'TGT', 'CVS', 'WBA', 'BAC', 'JPM', 'GS', 'MS', 'C',
+    'USB', 'WFC', 'AIG', 'AXP', 'BLK', 'SCHW', 'SPGI', 'V', 'MA'
+]
+
+# Write the list to a JSON file
+file_path = '/mnt/data/stock_symbols.json'
+with open(file_path, 'w') as file:
+    json.dump(stock_symbols, file)
+
+file_path
