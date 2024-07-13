@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, Image} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
+import { newsData } from './newsData';
+import { stockImage } from './stockImage';
 
 const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';  // Replace with your Alpaca API key
 const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ';  // Replace with your Alpaca API secret
@@ -15,7 +17,7 @@ const StockList = () => {
   const itemSize = width / 2 - 20;
 
   const stockSymbols = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA', 'BABA', 'INTC'
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA', 'ORCL', 'KO'
   ];
 
   const fetchStocks = async () => {
@@ -58,15 +60,18 @@ const StockList = () => {
 
   useEffect(() => {
     fetchStocks(); // Initial fetch
-    const intervalId = setInterval(fetchStocks, 30000); // Auto-refresh every 30 seconds
+    const intervalId = setInterval(fetchStocks, 60000); // Auto-refresh every 30 seconds
     return () => clearInterval(intervalId); // Clear interval on component unmount
   }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.stockItem, { width: itemSize, height: itemSize }]}
-      onPress={() => navigation.navigate('StockDetailScreen', { stock: item })}
-    >
+      onPress={() => navigation.navigate('StockDetailScreen', { stock: item })}>
+      <Image
+        source={{ uri: stockImage[item.symbol]?.imageUrl }}  // Get image from newsData.js
+        style={styles.stockImage}
+      />
       <Text style={styles.stockName}>{item.name}</Text>
       <Text style={styles.stockPrice}>${parseFloat(item.price).toFixed(2)}</Text>
     </TouchableOpacity>
@@ -126,6 +131,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
+  stockImage: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+    marginBottom: 10,
+  },
   stockItem: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -139,10 +150,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#616C6F'
   },
   stockPrice: {
     fontSize: 16,
     marginTop: 5,
+    color: '#333945'
   },
 });
 

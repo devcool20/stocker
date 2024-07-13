@@ -1,4 +1,11 @@
 {
   "name": "stocker",
-  "displayName": "stocker"
+  "displayName": "stocker",
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "25052778-216e-42e1-93f3-403326cd1de4"
+      }
+    }
+  }
 }
