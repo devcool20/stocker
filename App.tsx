@@ -8,7 +8,7 @@ import Login from './src/components/Login';
 import NewsList from './src/components/NewsList';
 import StockList from './src/screens/StockList';
 import StockDetailScreen from './src/screens/StockDetailScreen';
-
+import NewsDetailScreen from './src/screens/NewsDetailScreen';
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -19,6 +19,7 @@ const App = () => {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="StockList" component={StockList} options={{ title: 'Stocks' }}/>
         <Stack.Screen name="StockDetailScreen" component={StockDetailScreen} options={{ title: 'Stock Details' }}/>
+        <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

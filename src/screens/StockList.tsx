@@ -17,7 +17,7 @@ const StockList = () => {
   const itemSize = width / 2 - 20;
 
   const stockSymbols = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA', 'ORCL', 'KO'
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA', 'ORCL'
   ];
 
   const fetchStocks = async () => {
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 20,
   },
   stockImage: {
     width: 50,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   stockItem: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#ddd',

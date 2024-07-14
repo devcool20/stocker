@@ -1,46 +1,98 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, SafeAreaView} from 'react-native';
-import { newsData } from './newsData';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import axios from 'axios';
 import Sentiment from 'sentiment';
 
 const sentiment = new Sentiment();
 
-const StockDetailScreen = ({ route }) => {
+const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';
+const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ';
+const NEWS_API_KEY = 'a4d7c5b96122443eb989726dd0c2fe13';  // Replace with your news API key
+
+const StockDetailScreen = ({ route, navigation }) => {
   const { stock } = route.params;
-  const news = newsData[stock.symbol] || [];
+  const [stockDetails, setStockDetails] = useState(null);
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStockDetails = async () => {
+      try {
+        const response = await axios.get(`https://data.alpaca.markets/v2/stocks/${stock.symbol}/quotes/latest`, {
+          headers: {
+            'APCA-API-KEY-ID': API_KEY,
+            'APCA-API-SECRET-KEY': API_SECRET,
+          },
+        });
+
+        if (response.data && response.data.quote) {
+          setStockDetails({
+            lastPrice: response.data.quote.ap,  // Adjust as needed based on the API response structure
+            volume: response.data.quote.as,     // Adjust as needed based on the API response structure
+            marketCap: 'N/A',                   // Placeholder value
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching stock details:', error);
+      }
+    };
+
+    const fetchNews = async () => {
+      try {
+        const response = await axios.get(`https://newsapi.org/v2/everything?q=${stock.symbol}&apiKey=${NEWS_API_KEY}`);
+        if (response.data && response.data.articles) {
+          setNews(response.data.articles);
+        }
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStockDetails();
+    fetchNews();
+  }, [stock.symbol]);
 
   const analyzeSentiment = (text) => {
     const result = sentiment.analyze(text);
     return result.score;
   };
 
+  const averageSentiment = news.reduce((acc, article) => acc + analyzeSentiment(article.description || article.content || ''), 0) / news.length;
+  const recommendation = averageSentiment > 0 ? 'Buy' : 'Sell';
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+  if (!stockDetails) {
+    return <Text>Error loading stock details.</Text>;
+  }
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{stock.name}</Text>
+      <Text style={styles.stockDetail}>Last Traded Price: ${stockDetails.lastPrice}</Text>
+      <Text style={styles.stockDetail}>Volume: {stockDetails.volume}</Text>
+      <Text style={styles.stockDetail}>Market Cap: {stockDetails.marketCap}</Text>
       <Text style={styles.newsTitle}>News related to {stock.name}</Text>
       {news.length > 0 ? (
         <View style={styles.newsContainer}>
           {news.map((article, index) => {
-            const sentimentScore = analyzeSentiment(article.summary);
-            const recommendation = sentimentScore > 0 ? <Text style={styles.recommendationBuy}>Buy</Text> : <Text style={styles.recommendationSell}>Sell</Text>;
-            
-            
+            const sentimentScore = analyzeSentiment(article.description || article.content || '');
             return (
-              <View key={index} style={styles.newsArticle}>
-                <Image
-                  source={{ uri: article.imageUrl }}
-                  style={styles.newsImage}
-                />
-                <Text style={styles.newsArticleTitle}>{article.title}</Text>
-                <Text style={styles.newsArticleDescription}>{article.summary}</Text>
-                <Text style={styles.newsArticleSource}>Source: {article.source}</Text>
-                <Text style={styles.newsArticleDate}>{new Date(article.datetime).toLocaleString()}</Text>
-                <Text style={styles.sentimentScore}>Sentiment Score: {sentimentScore}</Text>
-                <Text style={styles.recommendation}>Recommendation: {recommendation}</Text>
-                {index < news.length - 1 && <View style={styles.separator} />}
-              </View>
+              <TouchableOpacity key={index} onPress={() => navigation.navigate('NewsDetail', { article })}>
+                <View style={styles.newsArticle}>
+                  <Text style={styles.newsArticleTitle}>{article.title}</Text>
+                  <Text style={styles.sentimentScore}>Sentiment Score: {sentimentScore}</Text>
+                  {index < news.length - 1 && <View style={styles.separator} />}
+                </View>
+              </TouchableOpacity>
             );
           })}
+          <Text style={styles.recommendation}>Average Sentiment: {averageSentiment.toFixed(2)}</Text>
+          <Text style={styles.recommendation}>Recommendation: {recommendation}</Text>
         </View>
       ) : (
         <Text>No news available for this stock.</Text>
@@ -55,31 +107,18 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
-  imageContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  image: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
     color: '#8395A7'
-    
   },
-  detail: {
+  stockDetail: {
     fontSize: 18,
     marginBottom: 10,
     textAlign: 'center',
     color: '#8395A7',
-  },
-  newsContainer: {
-    marginTop: 20,
   },
   newsTitle: {
     fontSize: 20,
@@ -88,14 +127,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#8395A7',
   },
+  newsContainer: {
+    marginTop: 20,
+  },
   newsArticle: {
     marginBottom: 15,
-  },
-  newsImage: {
-    width: '100%',
-    height: 120,
-    resizeMode: 'cover',
-    marginBottom: 10,
   },
   newsArticleTitle: {
     fontSize: 18,
@@ -103,23 +139,9 @@ const styles = StyleSheet.create({
     color: '#8395A7',
     marginBottom: 10
   },
-  newsArticleDescription: {
-    fontSize: 16,
-    color: '#8395A7',
-    marginBottom: 10
-  },
-  newsArticleSource: {
-    fontSize: 14,
-    color: 'gray',
-  },
-  newsArticleDate: {
-    fontSize: 14,
-    color: 'gray',
-  },
   sentimentScore: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 10,
     color: '#99AAAB'
   },
   recommendation: {
@@ -127,12 +149,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'black',
     marginTop: 10,
-  },
-  recommendationBuy: {
-    color: '#44bd32'
-  },
-  recommendationSell: {
-    color: '#c23616'
   },
   separator: {
     height: 1,
