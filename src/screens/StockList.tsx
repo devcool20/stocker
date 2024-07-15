@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   stockImage: {
     width: 50,

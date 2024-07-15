@@ -76,6 +76,16 @@ const StockDetailScreen = ({ route, navigation }) => {
       <Text style={styles.stockDetail}>Last Traded Price: ${stockDetails.lastPrice}</Text>
       <Text style={styles.stockDetail}>Volume: {stockDetails.volume}</Text>
       <Text style={styles.stockDetail}>Market Cap: {stockDetails.marketCap}</Text>
+      <Text style={styles.recommendation}>Average Sentiment: {averageSentiment.toFixed(2)}</Text>
+      <View style={styles.recContainer}>
+        <Text style={styles.stockRec}>What you should do: </Text>
+        {averageSentiment > 0 ? (
+          <Text style={styles.buy}>Buy</Text>
+        ) : (
+          <Text style={styles.sell}>Sell</Text>
+        )}
+      </View>
+
       <Text style={styles.newsTitle}>News related to {stock.name}</Text>
       {news.length > 0 ? (
         <View style={styles.newsContainer}>
@@ -106,6 +116,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+    
+
   },
   title: {
     fontSize: 24,
@@ -149,12 +161,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'black',
     marginTop: 10,
+    marginLeft: 85,
+    paddingBottom: 20
   },
   separator: {
     height: 1,
     backgroundColor: '#ccc',
     marginVertical: 20,
   },
+  recContainer: {
+    flex: 1,
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginLeft: 90,
+    paddingBottom: 12
+  },
+  buy: {
+    color: '#019031',
+  },
+  sell: {
+    color: '#E71C23',
+  },
+  stockRec: {
+    color: '#000000',
+    fontSize: 15
+  }
+  
 });
 
 export default StockDetailScreen;
