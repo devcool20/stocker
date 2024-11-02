@@ -21,7 +21,7 @@ const Login: React.FC = () => {
       return;
     }
     // Mock login logic
-    if (email === 'admin' && password === 'admin') {
+    if (email === 'a' && password === 'a') {
       //Alert.alert('Success', 'Login Successful!');
       navigation.navigate('StockList'); // Replace 'StockList' with your desired screen name
     } else {

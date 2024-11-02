@@ -1,0 +1,6 @@
+// Fetch news articles
+const fetchNews = async () => {
+  const response = await fetch('https://newsapi.org/v2/everything?q=stocks&apiKey=a4d7c5b96122443eb989726dd0c2fe13');
+  const data = await response.json();
+  setNews(data.articles);
+};
