@@ -1,50 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, Image} from 'react-native';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Image 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import { newsData } from './newsData';
 import { stockImage } from './stockImage';
 
-const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';  // Replace with your Alpaca API key
-const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ';  // Replace with your Alpaca API secret
+const API_KEY = 'PKVI8AK9C3LE8VRM6RA4'; // Replace with your Alpaca API key
+const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ'; // Replace with your Alpaca API secret
 
 const StockList = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
-  const { width } = Dimensions.get('window');
-  const itemSize = width / 2 - 20;
 
   const stockSymbols = [
     'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA', 'ORCL'
   ];
 
   const fetchStocks = async () => {
-    setLoading(true); // Set loading to true at the beginning of fetch
+    setLoading(true);
     try {
       const headers = {
         'APCA-API-KEY-ID': API_KEY,
-        'APCA-API-SECRET-KEY': API_SECRET
+        'APCA-API-SECRET-KEY': API_SECRET,
       };
 
       const promises = stockSymbols.map(symbol =>
-        axios.get(`https://data.alpaca.markets/v2/stocks/${symbol}/quotes/latest`, {
-          headers: headers
-        })
+        axios.get(`https://data.alpaca.markets/v2/stocks/${symbol}/quotes/latest`, { headers })
       );
 
       const responses = await Promise.all(promises);
 
       const fetchedStocks = responses.map(response => {
-        console.log('Response data:', response.data); // Log the response data for debugging
         const quote = response.data.quote;
-        if (!quote) {
-          throw new Error('Unexpected API response format');
-        }
         return {
           symbol: response.config.url.split('/')[5],
-          name: response.config.url.split('/')[5],  // Replace with actual name if available
+          name: response.config.url.split('/')[5],
           price: quote.ap,
         };
       });
@@ -59,21 +58,26 @@ const StockList = () => {
   };
 
   useEffect(() => {
-    fetchStocks(); // Initial fetch
-    const intervalId = setInterval(fetchStocks, 60000); // Auto-refresh every 30 seconds
-    return () => clearInterval(intervalId); // Clear interval on component unmount
+    fetchStocks();
+    const intervalId = setInterval(fetchStocks, 60000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.stockItem, { width: itemSize, height: itemSize }]}
-      onPress={() => navigation.navigate('StockDetailScreen', { stock: item })}>
-      <Image
-        source={{ uri: stockImage[item.symbol]?.imageUrl }}  // Get image from newsData.js
-        style={styles.stockImage}
-      />
-      <Text style={styles.stockName}>{item.name}</Text>
-      <Text style={styles.stockPrice}>${parseFloat(item.price).toFixed(2)}</Text>
+      style={styles.stockItem}
+      onPress={() => navigation.navigate('StockDetailScreen', { stock: item })}
+    >
+      <View style={styles.stockContent}>
+        <View style={styles.stockDetails}>
+          <Text style={styles.stockName}>{item.name}</Text>
+          <Text style={styles.stockPrice}>${parseFloat(item.price).toFixed(2)}</Text>
+        </View>
+        <Image
+          source={{ uri: stockImage[item.symbol]?.imageUrl }}
+          style={styles.stockImage}
+        />
+      </View>
     </TouchableOpacity>
   );
 
@@ -99,8 +103,7 @@ const StockList = () => {
         data={stocks}
         renderItem={renderItem}
         keyExtractor={(item) => item.symbol}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        key={'list-view'} // Force re-rendering to ensure no remnants of grid layout
       />
     </View>
   );
@@ -126,36 +129,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'red',
   },
-  row: {
-    flex: 1,
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  stockImage: {
-    width: 120,
-    height: 40,
-    resizeMode: 'contain',
-    marginBottom: 10,
-  },
   stockItem: {
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
+    padding: 10,
+    marginVertical: 8,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    backgroundColor: '#f5f5f5',
+    elevation: 1,
+  },
+  stockContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  stockDetails: {
+    flex: 1,
+    justifyContent: 'center',
   },
   stockName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#616C6F'
+    color: '#333',
   },
   stockPrice: {
     fontSize: 16,
-    marginTop: 5,
-    color: '#333945'
+    color: '#555',
+    marginTop: 4,
+  },
+  stockImage: {
+    width: 60,
+    height: 60,
+    resizeMode: 'contain',
   },
 });
 

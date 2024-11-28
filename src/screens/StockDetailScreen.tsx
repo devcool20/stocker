@@ -1,20 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import axios from 'axios';
+import { LineChart } from 'react-native-chart-kit';
 import Sentiment from 'sentiment';
 
 const sentiment = new Sentiment();
 
 const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';
 const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ';
-const NEWS_API_KEY = 'a4d7c5b96122443eb989726dd0c2fe13';  // Replace with your news API key
+const NEWS_API_KEY = 'a4d7c5b96122443eb989726dd0c2fe13'; // Replace with your news API key
 
 const StockDetailScreen = ({ route, navigation }) => {
   const { stock } = route.params;
   const [stockDetails, setStockDetails] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const last7DaysData = chartData ? chartData.prices.slice(-7) : [];
+  const last7DaysLabels = chartData ? chartData.labels.slice(-7) : [];
+  
+
+ // Corresponding labels
   useEffect(() => {
     const fetchStockDetails = async () => {
       try {
@@ -27,13 +34,36 @@ const StockDetailScreen = ({ route, navigation }) => {
 
         if (response.data && response.data.quote) {
           setStockDetails({
-            lastPrice: response.data.quote.ap,  // Adjust as needed based on the API response structure
-            volume: response.data.quote.as,     // Adjust as needed based on the API response structure
-            marketCap: 'N/A',                   // Placeholder value
+            lastPrice: response.data.quote.ap, // Adjust as needed based on the API response structure
+            volume: response.data.quote.as, // Adjust as needed based on the API response structure
+            marketCap: 'N/A', // Placeholder value
           });
         }
       } catch (error) {
         console.error('Error fetching stock details:', error);
+      }
+    };
+
+    const fetchHistoricalData = async () => {
+      try {
+        const response = await axios.get(`https://data.alpaca.markets/v2/stocks/${stock.symbol}/bars`, {
+          params: {
+            start: '2023-01-01T09:30:00Z',
+            timeframe: '1Day',
+          },
+          headers: {
+            'APCA-API-KEY-ID': API_KEY,
+            'APCA-API-SECRET-KEY': API_SECRET,
+          },
+        });
+
+        if (response.data && response.data.bars) {
+          const labels = response.data.bars.map((bar) => new Date(bar.t).toLocaleDateString());
+          const prices = response.data.bars.map((bar) => bar.c);
+          setChartData({ labels, prices });
+        }
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
       }
     };
 
@@ -51,6 +81,7 @@ const StockDetailScreen = ({ route, navigation }) => {
     };
 
     fetchStockDetails();
+    fetchHistoricalData();
     fetchNews();
   }, [stock.symbol]);
 
@@ -63,12 +94,14 @@ const StockDetailScreen = ({ route, navigation }) => {
   const recommendation = averageSentiment > 0 ? 'Buy' : 'Sell';
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return( <View style={styles.ai}>
+      <ActivityIndicator size="large" color="#0000ff" />
+    </View>)
   }
 
-  if (!stockDetails) {
-    return <Text>Error loading stock details.</Text>;
-  }
+  //if (!stockDetails || !chartData) {
+    //return <Text style={styles.loading}>Wait while the details load!</Text>;
+  //}
 
   return (
     <ScrollView style={styles.container}>
@@ -84,7 +117,69 @@ const StockDetailScreen = ({ route, navigation }) => {
         ) : (
           <Text style={styles.sell}>Sell</Text>
         )}
-      </View>
+      </View> 
+
+
+
+
+
+      {/* Render Stock Chart */}
+
+<Text style={styles.chartTitle}>Price Chart</Text>
+{chartData ? (
+  <LineChart
+    data={{
+      labels: last7DaysLabels,
+      datasets: [
+        {
+          data: last7DaysData,
+          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          strokeWidth: 2,
+        },
+      ],
+    }}
+    width={Dimensions.get('window').width - 50}
+    //width={100}
+    height={350}
+    yAxisLabel="$"
+    chartConfig={{
+      backgroundGradientFrom: '#f1f8ff',
+      backgroundGradientTo: '#ffffff',
+      decimalPlaces: 0,
+      color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+      labelColor: (opacity = 1) => `rgba(66, 66, 66, ${opacity})`,
+      propsForDots: {
+        r: '2',
+        strokeWidth: '1',
+        stroke: '#2196f3',
+      },
+      propsForBackgroundLines: {
+        strokeDasharray: '4',
+        stroke: '#e0e0e0',
+      },
+    }}
+    style={{
+      marginVertical: 20,
+      marginHorizontal: 1,
+      paddingHorizontal: 0,
+      borderRadius: 10,
+      paddingRight: 40, // Prevents overflow on the right
+    }}
+    verticalLabelRotation={45} // Rotates x-axis labels to prevent overlap
+    horizontalLabelRotation={0} // Keeps y-axis labels upright
+    bezier
+  />
+) : (
+  <Text style={{ textAlign: 'center', marginTop: 20 }}>Loading chart data...</Text>
+)}
+
+
+
+
+
+
+
+
 
       <Text style={styles.newsTitle}>News related to {stock.name}</Text>
       {news.length > 0 ? (
@@ -101,8 +196,6 @@ const StockDetailScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             );
           })}
-          <Text style={styles.recommendation}>Average Sentiment: {averageSentiment.toFixed(2)}</Text>
-          <Text style={styles.recommendation}>Recommendation: {recommendation}</Text>
         </View>
       ) : (
         <Text>No news available for this stock.</Text>
@@ -116,15 +209,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
-    
-
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    color: '#8395A7'
+    color: '#8395A7',
   },
   stockDetail: {
     fontSize: 18,
@@ -132,61 +223,87 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#8395A7',
   },
-  newsTitle: {
+  chartTitle: {
     fontSize: 20,
-    textAlign: 'center',
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#8395A7',
+    marginTop: 10,
+    textAlign: 'center',
   },
-  newsContainer: {
-    marginTop: 20,
+  recContainer: {
+    marginVertical: 20,
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3, // For Android shadow
   },
-  newsArticle: {
-    marginBottom: 15,
-  },
-  newsArticleTitle: {
+  stockRec: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#8395A7',
-    marginBottom: 10
+    textAlign: 'center',
+    color: '#333',
+  },
+  buy: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'green',
+    textAlign: 'center',
+  },
+  sell: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'red',
+    textAlign: 'center',
+  },
+  newsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#333'
+  },
+  newsContainer: {
+    marginVertical: 10,
+  },
+  newsArticle: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  newsArticleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#007BFF',
   },
   sentimentScore: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#99AAAB'
-  },
-  recommendation: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'black',
-    marginTop: 10,
-    marginLeft: 85,
-    paddingBottom: 20
+    fontSize: 14,
+    color: '#666',
   },
   separator: {
     height: 1,
-    backgroundColor: '#ccc',
-    marginVertical: 20,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 10,
   },
-  recContainer: {
-    flex: 1,
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginLeft: 90,
-    paddingBottom: 12
+  loading: {
+    flex: 1, // This makes the View take up the full height of the screen
+    justifyContent: 'center', // Centers content vertically
+    alignItems: '', // Centers content horizontally
+    color: '#333', // Optional: background color for visibility
   },
-  buy: {
-    color: '#019031',
-  },
-  sell: {
-    color: '#E71C23',
-  },
-  stockRec: {
-    color: '#000000',
-    fontSize: 15
+  ai: {
+    flex: 1, // This allows the view to take up the full height of the screen
+    justifyContent: 'center', // Centers content vertically
+    alignItems: 'center', // Centers content horizontally
+    backgroundColor: '#fff', 
   }
-  
+  // Add other styles as needed
 });
 
 export default StockDetailScreen;
