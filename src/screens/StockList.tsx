@@ -6,7 +6,9 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ActivityIndicator, 
-  Image 
+  Image,
+  Dimensions,
+  RefreshControl
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
@@ -15,10 +17,15 @@ import { stockImage } from './stockImage';
 const API_KEY = 'PKVI8AK9C3LE8VRM6RA4'; // Replace with your Alpaca API key
 const API_SECRET = 'lnymfV2GNvpNtuDLmg10wYxrKM0GzQgXdQvkhLRZ'; // Replace with your Alpaca API secret
 
+const { width } = Dimensions.get('window');
+const numColumns = 2;
+const cardWidth = (width - 30) / numColumns;
+
 const StockList = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
 
   const stockSymbols = [
@@ -57,10 +64,13 @@ const StockList = () => {
     }
   };
 
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    fetchStocks().finally(() => setRefreshing(false));
+  }, []);
+
   useEffect(() => {
     fetchStocks();
-    const intervalId = setInterval(fetchStocks, 60000);
-    return () => clearInterval(intervalId);
   }, []);
 
   const renderItem = ({ item }) => (
@@ -69,14 +79,14 @@ const StockList = () => {
       onPress={() => navigation.navigate('StockDetailScreen', { stock: item })}
     >
       <View style={styles.stockContent}>
-        <View style={styles.stockDetails}>
-          <Text style={styles.stockName}>{item.name}</Text>
-          <Text style={styles.stockPrice}>${parseFloat(item.price).toFixed(2)}</Text>
-        </View>
         <Image
           source={{ uri: stockImage[item.symbol]?.imageUrl }}
           style={styles.stockImage}
         />
+        <View style={styles.stockDetails}>
+          <Text style={styles.stockName}>{item.name}</Text>
+          <Text style={styles.stockPrice}>${parseFloat(item.price).toFixed(2)}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -84,7 +94,8 @@ const StockList = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading stocks...</Text>
       </View>
     );
   }
@@ -103,7 +114,17 @@ const StockList = () => {
         data={stocks}
         renderItem={renderItem}
         keyExtractor={(item) => item.symbol}
-        key={'list-view'} // Force re-rendering to ensure no remnants of grid layout
+        numColumns={numColumns}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#007AFF']}
+            tintColor="#007AFF"
+          />
+        }
       />
     </View>
   );
@@ -112,58 +133,73 @@ const StockList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  listContainer: {
     padding: 10,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F2F2F7',
   },
   errorText: {
-    fontSize: 18,
-    color: 'red',
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+    padding: 20,
   },
   stockItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginVertical: 8,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    elevation: 1,
+    width: cardWidth,
+    margin: 5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: 'hidden',
   },
   stockContent: {
-    flexDirection: 'row',
+    padding: 12,
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  stockDetails: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  stockName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  stockPrice: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 4,
   },
   stockImage: {
-    width: 60,
-    height: 60,
+    width: cardWidth * 0.6,
+    height: cardWidth * 0.6,
     resizeMode: 'contain',
+    marginBottom: 8,
+  },
+  stockDetails: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  stockName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  stockPrice: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
   },
 });
 

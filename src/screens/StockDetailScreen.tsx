@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, SafeAreaView } from 'react-native';
 import axios from 'axios';
 import { LineChart } from 'react-native-chart-kit';
 import Sentiment from 'sentiment';
@@ -94,9 +94,12 @@ const StockDetailScreen = ({ route, navigation }) => {
   const recommendation = averageSentiment > 0 ? 'Buy' : 'Sell';
 
   if (loading) {
-    return( <View style={styles.ai}>
-      <ActivityIndicator size="large" color="#0000ff" />
-    </View>)
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading stock details...</Text>
+      </View>
+    );
   }
 
   //if (!stockDetails || !chartData) {
@@ -104,206 +107,296 @@ const StockDetailScreen = ({ route, navigation }) => {
   //}
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>{stock.name}</Text>
-      <Text style={styles.stockDetail}>Last Traded Price: ${stockDetails.lastPrice}</Text>
-      <Text style={styles.stockDetail}>Volume: {stockDetails.volume}</Text>
-      <Text style={styles.stockDetail}>Market Cap: {stockDetails.marketCap}</Text>
-      <Text style={styles.recommendation}>Average Sentiment: {averageSentiment.toFixed(2)}</Text>
-      <View style={styles.recContainer}>
-        <Text style={styles.stockRec}>What you should do: </Text>
-        {averageSentiment > 0 ? (
-          <Text style={styles.buy}>Buy</Text>
-        ) : (
-          <Text style={styles.sell}>Sell</Text>
-        )}
-      </View> 
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.symbol}>{stock.symbol}</Text>
+          <Text style={styles.name}>{stock.name}</Text>
+        </View>
 
+        <View style={styles.priceCard}>
+          <Text style={styles.priceLabel}>Current Price</Text>
+          <Text style={styles.priceValue}>${stockDetails?.lastPrice}</Text>
+          <View style={styles.priceDetails}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Volume</Text>
+              <Text style={styles.detailValue}>{stockDetails?.volume}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Market Cap</Text>
+              <Text style={styles.detailValue}>{stockDetails?.marketCap}</Text>
+            </View>
+          </View>
+        </View>
 
+        <View style={styles.sentimentCard}>
+          <Text style={styles.sentimentLabel}>Market Sentiment</Text>
+          <View style={styles.sentimentValueContainer}>
+            <Text style={[
+              styles.sentimentValue,
+              { color: averageSentiment > 0 ? '#34C759' : '#FF3B30' }
+            ]}>
+              {averageSentiment > 0 ? 'Positive' : 'Negative'}
+            </Text>
+            <Text style={styles.sentimentScore}>{averageSentiment.toFixed(2)}</Text>
+          </View>
+          <Text style={styles.recommendation}>
+            Recommendation: {averageSentiment > 0 ? 'Buy' : 'Sell'}
+          </Text>
+        </View>
 
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Price History</Text>
+          {chartData ? (
+            <LineChart
+              data={{
+                labels: last7DaysLabels,
+                datasets: [
+                  {
+                    data: last7DaysData,
+                    color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+                    strokeWidth: 2,
+                  },
+                ],
+              }}
+              width={Dimensions.get('window').width - 40}
+              height={250}
+              yAxisLabel="$"
+              chartConfig={{
+                backgroundGradientFrom: '#ffffff',
+                backgroundGradientTo: '#ffffff',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(66, 66, 66, ${opacity})`,
+                propsForDots: {
+                  r: '4',
+                  strokeWidth: '2',
+                  stroke: '#007AFF',
+                },
+                propsForBackgroundLines: {
+                  strokeDasharray: '4',
+                  stroke: '#e0e0e0',
+                },
+              }}
+              style={styles.chart}
+              bezier
+              verticalLabelRotation={45}
+            />
+          ) : (
+            <Text style={styles.chartLoading}>Loading chart data...</Text>
+          )}
+        </View>
 
-
-      {/* Render Stock Chart */}
-
-<Text style={styles.chartTitle}>Price Chart</Text>
-{chartData ? (
-  <LineChart
-    data={{
-      labels: last7DaysLabels,
-      datasets: [
-        {
-          data: last7DaysData,
-          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-          strokeWidth: 2,
-        },
-      ],
-    }}
-    width={Dimensions.get('window').width - 50}
-    //width={100}
-    height={350}
-    yAxisLabel="$"
-    chartConfig={{
-      backgroundGradientFrom: '#f1f8ff',
-      backgroundGradientTo: '#ffffff',
-      decimalPlaces: 0,
-      color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-      labelColor: (opacity = 1) => `rgba(66, 66, 66, ${opacity})`,
-      propsForDots: {
-        r: '2',
-        strokeWidth: '1',
-        stroke: '#2196f3',
-      },
-      propsForBackgroundLines: {
-        strokeDasharray: '4',
-        stroke: '#e0e0e0',
-      },
-    }}
-    style={{
-      marginVertical: 20,
-      marginHorizontal: 1,
-      paddingHorizontal: 0,
-      borderRadius: 10,
-      paddingRight: 40, // Prevents overflow on the right
-    }}
-    verticalLabelRotation={45} // Rotates x-axis labels to prevent overlap
-    horizontalLabelRotation={0} // Keeps y-axis labels upright
-    bezier
-  />
-) : (
-  <Text style={{ textAlign: 'center', marginTop: 20 }}>Loading chart data...</Text>
-)}
-
-
-
-
-
-
-
-
-
-      <Text style={styles.newsTitle}>News related to {stock.name}</Text>
-      {news.length > 0 ? (
-        <View style={styles.newsContainer}>
-          {news.map((article, index) => {
-            const sentimentScore = analyzeSentiment(article.description || article.content || '');
-            return (
-              <TouchableOpacity key={index} onPress={() => navigation.navigate('NewsDetail', { article })}>
-                <View style={styles.newsArticle}>
-                  <Text style={styles.newsArticleTitle}>{article.title}</Text>
-                  <Text style={styles.sentimentScore}>Sentiment Score: {sentimentScore}</Text>
-                  {index < news.length - 1 && <View style={styles.separator} />}
+        <View style={styles.newsSection}>
+          <Text style={styles.newsTitle}>Latest News</Text>
+          {news.length > 0 ? (
+            news.map((article, index) => (
+              <TouchableOpacity 
+                key={index} 
+                onPress={() => navigation.navigate('NewsDetail', { article })}
+                style={styles.newsCard}
+              >
+                <Text style={styles.newsArticleTitle}>{article.title}</Text>
+                <View style={styles.newsFooter}>
+                  <Text style={styles.sentimentScore}>
+                    Sentiment: {analyzeSentiment(article.description || article.content || '').toFixed(2)}
+                  </Text>
+                  <Text style={styles.newsDate}>
+                    {new Date(article.publishedAt).toLocaleDateString()}
+                  </Text>
                 </View>
               </TouchableOpacity>
-            );
-          })}
+            ))
+          ) : (
+            <Text style={styles.noNews}>No news available for this stock.</Text>
+          )}
         </View>
-      ) : (
-        <Text>No news available for this stock.</Text>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 16,
   },
-  title: {
+  header: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  symbol: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  name: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 4,
+  },
+  priceCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  priceLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  priceValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 16,
+  },
+  priceDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+    paddingTop: 16,
+  },
+  detailItem: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  sentimentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sentimentLabel: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  sentimentValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sentimentValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#8395A7',
+    marginRight: 8,
   },
-  stockDetail: {
+  sentimentScore: {
     fontSize: 18,
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#8395A7',
+    color: '#666',
+  },
+  recommendation: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '600',
+  },
+  chartCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   chartTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  recContainer: {
-    marginVertical: 20,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3, // For Android shadow
-  },
-  stockRec: {
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#333',
+    color: '#000',
+    marginBottom: 16,
   },
-  buy: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'green',
-    textAlign: 'center',
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
-  sell: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'red',
+  chartLoading: {
     textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
+  },
+  newsSection: {
+    marginBottom: 20,
   },
   newsTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 20,
-    textAlign: 'center',
-    color: '#333'
+    color: '#000',
+    marginBottom: 16,
   },
-  newsContainer: {
-    marginVertical: 10,
-  },
-  newsArticle: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  newsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   newsArticleTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007BFF',
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  newsFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sentimentScore: {
     fontSize: 14,
     color: '#666',
   },
-  separator: {
-    height: 1,
-    backgroundColor: '#e0e0e0',
-    marginVertical: 10,
+  newsDate: {
+    fontSize: 14,
+    color: '#666',
   },
-  loading: {
-    flex: 1, // This makes the View take up the full height of the screen
-    justifyContent: 'center', // Centers content vertically
-    alignItems: '', // Centers content horizontally
-    color: '#333', // Optional: background color for visibility
+  noNews: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
   },
-  ai: {
-    flex: 1, // This allows the view to take up the full height of the screen
-    justifyContent: 'center', // Centers content vertically
-    alignItems: 'center', // Centers content horizontally
-    backgroundColor: '#fff', 
-  }
-  // Add other styles as needed
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
 });
 
 export default StockDetailScreen;
