@@ -1,3 +1,9 @@
+This is a stock aggregator application developed for cross platform use, with react native and typescript as a tech stack. The main purpose of stocker is to provide user with the ongoing sentiments in the market with the help of machine learning.
+
+
+
+
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 ![Screenshot 2025-03-27 104914](https://github.com/user-attachments/assets/298a7ff3-ded7-4f5c-9a79-9a34996d4e8b)
