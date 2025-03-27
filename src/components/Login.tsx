@@ -56,6 +56,7 @@ const Login: React.FC = () => {
     <ImageBackground
       source={require('../assets/stockbg.jpg')}
       style={styles.backgroundImage}
+      onError={(error) => console.log('Background image error:', error.nativeEvent.error)}
     >
       <View style={styles.container}>
         {!showForm ? (
@@ -96,7 +97,12 @@ const Login: React.FC = () => {
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   container: {
     flex: 1,

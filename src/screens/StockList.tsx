@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   stockItem: {
     width: cardWidth,
-    margin: 5,
+    margin: 3,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     shadowColor: '#000',
@@ -177,12 +177,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   stockContent: {
-    padding: 12,
+    padding: 5,
     alignItems: 'center',
   },
   stockImage: {
-    width: cardWidth * 0.6,
-    height: cardWidth * 0.6,
+    width: cardWidth * 0.4,
+    height: cardWidth * 0.4,
     resizeMode: 'contain',
     marginBottom: 8,
   },

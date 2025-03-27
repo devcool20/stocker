@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, SafeAreaView } from 'react-native';
 import axios from 'axios';
 import { LineChart } from 'react-native-chart-kit';
 import Sentiment from 'sentiment';
-
+import { stockImage } from './stockImage';
 const sentiment = new Sentiment();
 
 const API_KEY = 'PKVI8AK9C3LE8VRM6RA4';
@@ -110,7 +110,10 @@ const StockDetailScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.symbol}>{stock.symbol}</Text>
+          <Image 
+            source={{ uri: stockImage[stock.symbol]?.imageUrl }}
+            style={styles.stockImage}
+          />
           <Text style={styles.name}>{stock.name}</Text>
         </View>
 
@@ -228,6 +231,12 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
     alignItems: 'center',
+  },
+  stockImage: {
+    width: 100,
+    height:20,
+    borderRadius: 1,
+    //marginBottom: 12,
   },
   symbol: {
     fontSize: 32,
